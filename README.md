@@ -9,4 +9,4 @@ Inspired by:
 * Python 3
 * pip install notion-py webbrowser py2app
 * Update the script to add your urls and token.
-* Convert the script to a mac app with py2app
+* Convert the script to a mac app with py2app `python setup.py py2app`
