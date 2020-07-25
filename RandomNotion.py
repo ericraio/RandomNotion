@@ -32,20 +32,24 @@ def get_note(note, client, url):
             if hasattr(note.__class__, 'collection'):
                 note = get_note_for_collection(note)
             elif hasattr(note.__class__, 'children'):
-                note = get_notes_for_children(note.children)
+                note = get_note_for_children(note.children)
 
-    if not note:
+    if not note or any(ele in note.title for ele in skip_title_list):
         note = get_note(client.get_block(url), client, url)
 
     return note
 
-def get_notes_for_children(children):
+def get_note_for_children(children):
     if len(children) == 0:
         return children
     else:
         rand = random.randint(0, len(children) - 1)
-        return children[rand]
+        note = children[rand]
+        if len(note.children) == 0: # Working with a collection
+            rand = random.randint(0, len(children) - 1)
+            note = children[rand]
 
+    return note
 
 def get_note_for_collection(page):
     rows = page.collection.get_rows()
@@ -66,4 +70,9 @@ if __name__ == '__main__':
     # either take in user arg for number of rows
     # default to five since the API call is kinda slow XD
     num_rand_rows = 5
+
+    skip_title_list = [
+            # Add titles or partial match to title's to skip in random generator
+    ]
+
     main(num_rand_rows)
