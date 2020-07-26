@@ -28,13 +28,15 @@ def get_note(note, client, url):
     if not note:
         note = get_note(client.get_block(url), client, url)
     else:
-        for _ in range(num_rand_rows):
-            if hasattr(note.__class__, 'collection'):
-                note = get_note_for_collection(note)
-            elif hasattr(note.__class__, 'children'):
-                note = get_note_for_children(note.children)
+        if hasattr(note.__class__, 'collection'):
+            note = get_note_for_collection(note)
+        elif hasattr(note.__class__, 'children'):
+            note = get_note_for_children(note.children)
 
-    if not note or any(ele in note.title for ele in skip_title_list):
+    if hasattr(note.__class__, 'collection'):
+        note = get_note_for_collection(note)
+
+    if not note or not note.title or any(ele in note.title for ele in skip_title_list):
         note = get_note(client.get_block(url), client, url)
 
     return note
@@ -43,13 +45,57 @@ def get_note_for_children(children):
     if len(children) == 0:
         return children
     else:
+        note = get_random_note(children)
+
+        if len(note.children) > 0:
+            if not contains_element(note, "CollectionViewPageBlock") and (contains_element(note, "TextBlock") or contains_element(note, "VideoBlock")):
+                if contains_element(note, "PageBlock"):
+                    roll = random.randint(1,100)
+                    if roll <= 50:
+                        return note
+                    else:
+                        return get_note_for_children(note.children)
+                else:
+                    return note
+            elif contains_element(note, "CollectionViewPageBlock") and not contains_element(note, "PageBlock"):
+                return get_random_note(note.children)
+            else:
+                if contains_element(note, "PageBlock"):
+                    if contains_element(note, "CollectionViewPageBlock"):
+                        note = get_random_note(note.children)
+                        if contains_element(note, "PageBlock"):
+                            return get_note_for_children(note.children)
+                        else:
+                            return note
+                    else:
+                        if contains_element(note, "TextBlock") or contains_element(note, "VideoBlock"):
+                            return note
+                        else:
+                            return None
+        else:
+            return None
+
+
+def contains_element(note, el):
+    arr = []
+    for child in note.children:
+        arr.append(get_class(child))
+    if note.title == "Power":
+        print(arr)
+        print(note)
+    return any(ele in el for ele in arr)
+
+def get_random_note(children):
+    rand = random.randint(0, len(children) - 1)
+    note = children[rand]
+    if len(note.children) == 0: # Working with a collection
         rand = random.randint(0, len(children) - 1)
-        note = children[rand]
-        if len(note.children) == 0: # Working with a collection
-            rand = random.randint(0, len(children) - 1)
-            note = children[rand]
+        return children[rand]
 
     return note
+
+def get_class(node):
+    return type(node).__name__
 
 def get_note_for_collection(page):
     rows = page.collection.get_rows()
